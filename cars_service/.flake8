@@ -1,0 +1,7 @@
+[flake8]
+max-line-length = 120
+import-order-style = google
+exclude = ./migrations/*
+application_import_names = app
+inline-quotes = '
+multiline-quotes = """
