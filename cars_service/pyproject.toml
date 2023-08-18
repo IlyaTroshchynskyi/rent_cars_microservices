@@ -8,10 +8,14 @@ packages = [{include = "cars_service"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-fastapi = {extras = ["all"], version = "^0.95.1"}
+fastapi = "^0.101.1"
 sqlalchemy = "^2.0.11"
 python-dotenv = "^1.0.0"
 alembic = "^1.10.4"
+polyfactory = "^2.7.2"
+pydantic = "^2.2.0"
+pydantic-settings = "^2.0.3"
+python-multipart = "^0.0.6"
 
 
 [tool.poetry.group.dev.dependencies]
