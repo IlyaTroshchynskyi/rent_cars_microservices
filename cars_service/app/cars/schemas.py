@@ -1,8 +1,9 @@
+import json
 from datetime import date
 from enum import auto, StrEnum
 import re
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class CarStatusEnum(StrEnum):
@@ -28,8 +29,13 @@ class CarBaseModel(BaseModel):
     def validate_engine(cls, value):
         return _validate_engine(value)
 
+    @model_validator(mode='before')
+    @classmethod
+    def to_py_dict(cls, data: str | dict):
+        return json.loads(data) if isinstance(data, str) else data
 
-class CarRead(BaseModel):
+
+class CarOut(BaseModel):
     id: int
     car_description: str
     car_number: str
@@ -44,7 +50,7 @@ class CarRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class CarCreate(CarBaseModel):
+class CarIn(CarBaseModel):
     car_description: str = Field(min_length=1, max_length=32)
     car_number: str = Field(min_length=1, max_length=16)
     transmission: CarTransmissionEnum = CarTransmissionEnum.AUTOMATIC

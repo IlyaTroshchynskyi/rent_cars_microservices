@@ -1,8 +1,8 @@
 """create models
 
-Revision ID: 02acfe38afe4
+Revision ID: a5ba43ea6681
 Revises: 
-Create Date: 2023-08-16 20:29:21.474919
+Create Date: 2023-08-23 11:51:21.133049
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '02acfe38afe4'
+revision: str = 'a5ba43ea6681'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -42,7 +42,7 @@ def upgrade() -> None:
                     sa.Column('comment', sa.Text(), nullable=False),
                     sa.Column('stars', sa.Integer(), nullable=False),
                     sa.Column('car_id', sa.Integer(), nullable=False),
-                    sa.Column('parent_id', sa.Integer(), nullable=False),
+                    sa.Column('parent_id', sa.Integer(), nullable=True),
                     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
                     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
                     sa.ForeignKeyConstraint(['car_id'], ['cars.id'], ondelete='CASCADE'),
