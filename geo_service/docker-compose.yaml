@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  redis:
+    restart: always
+    image: redis:latest
+    container_name: redis_geo
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:
