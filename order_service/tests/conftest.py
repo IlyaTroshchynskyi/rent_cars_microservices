@@ -11,7 +11,7 @@ import pytest
 
 from app import create_app
 from app.models import gather_documents, Order
-from app.orders.schemas import OrderCreate, OrderDictSerialized, OrderRead
+from app.orders.schemas import OrderCreate, OrderDictSerialized, OrderOut, CarOut
 
 
 def pytest_configure(config: pytest.Config):
@@ -59,8 +59,8 @@ async def client(app) -> AsyncClient:
 
 
 @register_fixture(name='orders_factory')
-class OrderReadFactory(ModelFactory[OrderRead]):
-    __model__ = OrderRead
+class OrderReadFactory(ModelFactory[OrderOut]):
+    __model__ = OrderOut
     __random_seed__ = 1
 
     @classmethod
@@ -89,7 +89,11 @@ class OrderCreateFactory(ModelFactory[OrderCreate]):
 
 @pytest.fixture(scope='function')
 async def orders(orders_factory) -> list[OrderDictSerialized]:
-    order_1: OrderRead = orders_factory.build()
+    order_1: OrderOut = orders_factory.build()
     db_order_1 = Order(**order_1.model_dump())
     await db_order_1.insert()
     yield [order_1.serializable_dict(by_alias=True)]
+
+
+class CarReadFactory(ModelFactory[CarOut]):
+    __model__ = CarOut
