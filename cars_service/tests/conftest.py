@@ -14,9 +14,10 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession, create_async_engine
 from sqlalchemy.orm import Session, SessionTransaction
 
-from app.cars.schemas import CarRead
+from app.cars.schemas import CarOut
 from app.config import get_settings
 from app.main import app
+from app.reviews.schemas import ReviewIn
 
 
 def pytest_configure(config: pytest.Config):
@@ -25,7 +26,7 @@ def pytest_configure(config: pytest.Config):
     This hook is called for every plugin and initial conftest
     file after command line options have been parsed.
     """
-    os.environ['DATABASE_URL'] = 'postgresql+asyncpg://test_postgres:test_postgres@localhost:5433/rent-cars-test'
+    os.environ['DATABASE_URL'] = 'postgresql+psycopg://test_postgres:test_postgres@localhost:5433/rent-cars-test'
 
 
 @pytest.fixture(scope='session')
@@ -77,13 +78,15 @@ async def db() -> AsyncSession:
 def alembic_config() -> Config:
     config = Config()
     config.set_main_option('script_location', f'{get_settings().BASE_DIR}/migrations')
-    config.set_main_option('sqlalchemy.url', os.environ['DATABASE_URL'].replace('postgresql+asyncpg', 'postgresql'))
+    # config.set_main_option('sqlalchemy.url', os.environ['DATABASE_URL'].replace('postgresql+psycopg', 'postgresql'))
+    config.set_main_option('sqlalchemy.url', os.environ['DATABASE_URL'])
     return config
 
 
 @pytest.fixture(scope='session', autouse=True)
 async def make_migration(alembic_config) -> None:
-    engine = create_engine(os.environ['DATABASE_URL'].replace('postgresql+asyncpg', 'postgresql'), echo=True)
+    # engine = create_engine(os.environ['DATABASE_URL'].replace('postgresql+psycopg', 'postgresql'), echo=True)
+    engine = create_engine(os.environ['DATABASE_URL'], echo=True)
     with engine.begin():
         upgrade(alembic_config, 'head')
         yield
@@ -99,8 +102,8 @@ def event_loop():
 
 
 @register_fixture(name='cars_factory')
-class CarReadFactory(ModelFactory[CarRead]):
-    __model__ = CarRead
+class CarReadFactory(ModelFactory[CarOut]):
+    __model__ = CarOut
     __random_seed__ = 1
 
     @classmethod
@@ -132,7 +135,7 @@ class CarReadFactory(ModelFactory[CarRead]):
 
 
 @pytest.fixture(scope='function')
-async def cars(cars_factory: CarReadFactory) -> tuple[CarRead]:
+async def cars(cars_factory: CarReadFactory) -> tuple[CarOut]:
     car_1 = cars_factory.build()
     car_2 = cars_factory.build()
     yield car_1, car_2
@@ -145,3 +148,15 @@ async def create_test_image(filename):
 
         async with aiofiles.open(settings.STATIC_DIR + filename + '.jpg', 'wb') as output_file:
             await output_file.write(image_data)
+
+
+@register_fixture(name='review_factory')
+class ReviewInFactory(ModelFactory[ReviewIn]):
+    __model__ = ReviewIn
+
+
+@pytest.fixture(scope='function')
+async def reviews(review_factory: ReviewInFactory) -> tuple[ReviewIn]:
+    review_1 = review_factory.build()
+    review_2 = review_factory.build()
+    yield review_1, review_2

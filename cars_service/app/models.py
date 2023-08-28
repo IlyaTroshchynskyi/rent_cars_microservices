@@ -48,8 +48,8 @@ class Review(Base, CommonFieldsMixin):
     comment: Mapped[str] = mapped_column(Text)
     stars: Mapped[int] = mapped_column(Integer)
     car_id: Mapped[int] = mapped_column(Integer, ForeignKey('cars.id', ondelete='CASCADE'))
-    parent_id: Mapped[int] = mapped_column(Integer, ForeignKey('reviews.id'))
-    sub_reviews: Mapped[int] = relationship('Review', backref=backref('parent', remote_side='Review.id'))
+    parent_id: Mapped[int] = mapped_column(Integer, ForeignKey('reviews.id'), nullable=True)
+    sub_reviews: Mapped[list['Review']] = relationship('Review', backref=backref('parent', remote_side='Review.id'))
 
     def __str__(self):
         return f'{self.comment} - {self.stars}'
