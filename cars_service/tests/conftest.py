@@ -16,8 +16,8 @@ from sqlalchemy.orm import Session, SessionTransaction
 
 from app.cars.schemas import CarOut
 from app.config import get_settings
-from app.main import app
 from app.reviews.schemas import ReviewIn
+from app import create_app
 
 
 def pytest_configure(config: pytest.Config):
@@ -30,13 +30,19 @@ def pytest_configure(config: pytest.Config):
 
 
 @pytest.fixture(scope='session')
-async def client() -> AsyncClient:
+async def app():
+    _app = create_app()
+    yield _app
+
+
+@pytest.fixture(scope='session')
+async def client(app) -> AsyncClient:
     async with AsyncClient(app=app, base_url='http://test') as client:
         yield client
 
 
 @pytest.fixture
-async def db() -> AsyncSession:
+async def db(app) -> AsyncSession:
     """https://github.com/sqlalchemy/sqlalchemy/issues/5811#issuecomment-756269881"""
     async_engine = create_async_engine(os.environ['DATABASE_URL'])
 
@@ -78,14 +84,12 @@ async def db() -> AsyncSession:
 def alembic_config() -> Config:
     config = Config()
     config.set_main_option('script_location', f'{get_settings().BASE_DIR}/migrations')
-    # config.set_main_option('sqlalchemy.url', os.environ['DATABASE_URL'].replace('postgresql+psycopg', 'postgresql'))
     config.set_main_option('sqlalchemy.url', os.environ['DATABASE_URL'])
     return config
 
 
 @pytest.fixture(scope='session', autouse=True)
 async def make_migration(alembic_config) -> None:
-    # engine = create_engine(os.environ['DATABASE_URL'].replace('postgresql+psycopg', 'postgresql'), echo=True)
     engine = create_engine(os.environ['DATABASE_URL'], echo=True)
     with engine.begin():
         upgrade(alembic_config, 'head')

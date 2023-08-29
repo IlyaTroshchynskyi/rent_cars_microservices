@@ -3,12 +3,13 @@ import json
 from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.config import get_settings
 from tests.conftest import CarReadFactory, create_test_image
 
 from app.cars.schemas import CarOut
-from app.config import settings
-from app.models import Car
 from tests.entity_creators import create_car
+from app.models import Car
 
 
 async def test_create_car(client: AsyncClient, cars_factory: CarReadFactory, db: AsyncSession):
@@ -16,7 +17,7 @@ async def test_create_car(client: AsyncClient, cars_factory: CarReadFactory, db:
     car = cars_factory.build()
 
     data = {
-        'file': (filename, open(settings.TEST_DIR + filename, 'rb'), 'image/jpeg'),
+        'file': (filename, open(get_settings().TEST_DIR + filename, 'rb'), 'image/jpeg'),
         'car': (None, json.dumps(car.dict(exclude={'id', 'image'})), 'application/json'),
     }
     response = await client.post('/cars/', files=data)
@@ -82,7 +83,7 @@ async def test_update_car(client: AsyncClient, cars: tuple[CarOut], db: AsyncSes
     await create_car(db, cars[0])
 
     data = {
-        'file': (filename, open(settings.TEST_DIR + filename, 'rb'), 'image/jpeg'),
+        'file': (filename, open(get_settings().TEST_DIR + filename, 'rb'), 'image/jpeg'),
         'car': (None, json.dumps({'car_description': 'Bmw Updated', 'engine': '4.0L'}), 'application/json'),
     }
     response = await client.patch(f'/cars/{cars[0].id}', files=data)
