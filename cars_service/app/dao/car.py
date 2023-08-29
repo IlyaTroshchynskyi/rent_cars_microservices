@@ -7,8 +7,8 @@ from sqlalchemy import delete, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.cars.schemas import CarUpdate, CarIn
-from app.config import settings
 from app.custom_exceptions import NotFoundError
+from app.config import get_settings
 from app.models import Car
 
 
@@ -20,9 +20,9 @@ async def get_cars(db: AsyncSession) -> Sequence[Car]:
 
 async def create_car(db: AsyncSession, car: CarIn, file: UploadFile) -> Car:
     file_name = car.car_number.replace(' ', '') + '.jpg'
-    await write_car_image(settings.STATIC_DIR + file_name, file)
+    await write_car_image(get_settings().STATIC_DIR + file_name, file)
 
-    query = insert(Car).values(**car.model_dump(), image=settings.STATIC_URL + file_name).returning(Car)
+    query = insert(Car).values(**car.model_dump(), image=get_settings().STATIC_URL + file_name).returning(Car)
     result = await db.execute(query)
     result = result.scalar()
     await db.commit()
@@ -46,7 +46,7 @@ async def delete_car_by_id(db: AsyncSession, car_id: int) -> Car:
     car = car.scalar()
     if car:
         filename = car.car_number + '.jpg'
-        await delete_car_image(settings.STATIC_DIR + filename)
+        await delete_car_image(get_settings().STATIC_DIR + filename)
         return car
     raise NotFoundError
 
@@ -67,7 +67,7 @@ async def update_car_by_id(db: AsyncSession, car_id: int, car_data: CarUpdate, f
     car = result.scalar()
     if car:
         if file:
-            await write_car_image(settings.STATIC_DIR + car.car_number.replace(' ', '') + '.jpg', file)
+            await write_car_image(get_settings().STATIC_DIR + car.car_number.replace(' ', '') + '.jpg', file)
         return car
     raise NotFoundError
 
