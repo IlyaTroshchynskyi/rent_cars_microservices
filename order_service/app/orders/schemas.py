@@ -21,6 +21,19 @@ def _replace_timezone(value: datetime):
     return value.replace(tzinfo=None)
 
 
+class CarOut(BaseModel):
+    id: int
+    car_description: str
+    car_number: str
+    transmission: str
+    engine: str
+    year: int
+    status: str
+    image: str
+    rental_cost: int
+    car_station_id: int
+
+
 class BaseOrder(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True, json_encoders={datetime: _replace_timezone})
 
@@ -29,7 +42,7 @@ class BaseOrder(BaseModel):
         return jsonable_encoder(default_dict)
 
 
-class OrderRead(BaseOrder):
+class OrderOut(BaseOrder):
     id: PydanticObjectId = Field(alias='_id')
     rental_date_start: datetime
     rental_date_end: datetime
@@ -42,7 +55,11 @@ class OrderRead(BaseOrder):
     order_cars: list[int]
 
 
-class BaseOrderCreate(BaseOrder):
+class OrderCarOut(OrderOut):
+    order_cars: list[CarOut]
+
+
+class BaseOrderIn(BaseOrder):
     rental_date_start: datetime
     rental_date_end: datetime
     prepayment: int = Field(ge=0, le=10_000)
@@ -55,11 +72,11 @@ class BaseOrderCreate(BaseOrder):
         return _check_date_rental_dates(values)
 
 
-class OrderCreate(BaseOrderCreate):
+class OrderCreate(BaseOrderIn):
     order_cars: list[int]
 
 
-class OrderCreateReturn(BaseOrderCreate):
+class OrderCreateReturn(BaseOrderIn):
     rental_time: int
     total_cost: float
     order_cars: list[int]
