@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "websocket-service"
+version = "0.1.0"
+description = ""
+authors = ["Illia Troshchynskyi <itroshchinskiy@rambler.ua>"]
+readme = "README.md"
+packages = [{include = "websocket_service"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+aio-pika = "^9.2.2"
+fastapi = {extras = ["all"], version = "^0.103.0"}
+
+
+[tool.poetry.group.dev.dependencies]
+flake8 = "^6.0.0"
+flake8-print = "^5.0.0"
+flake8-quotes = "^3.3.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
