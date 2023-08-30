@@ -3,17 +3,19 @@ from typing import Sequence
 import aiofiles
 import aiofiles.os as aio_os
 from fastapi import UploadFile
+from httpx import AsyncClient
 from sqlalchemy import delete, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.cars.schemas import CarUpdate, CarIn
+from app.cars.schemas import CarUpdate, CarIn, CarFiltering
 from app.custom_exceptions import NotFoundError
 from app.config import get_settings
+from app.dao.car_filter import CarQueryBuilder
 from app.models import Car
 
 
-async def get_cars(db: AsyncSession) -> Sequence[Car]:
-    query = select(Car).order_by(Car.id)
+async def get_cars(db: AsyncSession, params: CarFiltering) -> Sequence[Car]:
+    query = CarQueryBuilder(params).build_query()
     result = await db.execute(query)
     return result.scalars().all()
 
@@ -73,4 +75,9 @@ async def update_car_by_id(db: AsyncSession, car_id: int, car_data: CarUpdate, f
 
 
 async def is_car_station_exists(car_station_id: int) -> bool:
-    return True
+    async with AsyncClient() as client:
+        response = await client.get(f'{get_settings().GEO_SERVICE_BASE_URL}{car_station_id}')
+
+    if response.status_code == 200:
+        return True
+    return False

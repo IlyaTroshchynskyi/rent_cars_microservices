@@ -1,7 +1,9 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from typing import Annotated
+
+from fastapi import APIRouter, HTTPException, UploadFile, File, Depends
 from fastapi import Response
 
-from app.cars.schemas import CarIn, CarOut, CarUpdate
+from app.cars.schemas import CarIn, CarOut, CarUpdate, CarFiltering
 from app.common.dependency import db_dependency
 from app.custom_exceptions import NotFoundError
 from app.dao.car import (
@@ -17,8 +19,8 @@ router = APIRouter(prefix='/cars', tags=['Cars'])
 
 
 @router.get('/', response_model=list[CarOut])
-async def get_all_cars(db: db_dependency):
-    return await get_cars(db)
+async def get_all_cars(db: db_dependency, query_param: Annotated[CarFiltering, Depends()]):
+    return await get_cars(db, query_param)
 
 
 @router.post('/', response_model=CarIn, status_code=201)
