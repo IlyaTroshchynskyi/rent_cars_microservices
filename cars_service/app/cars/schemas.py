@@ -1,8 +1,12 @@
 import json
+from dataclasses import dataclass
+
 from datetime import date
 from enum import auto, StrEnum
 import re
+from typing import Annotated
 
+from fastapi import Query
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
@@ -83,3 +87,17 @@ def _validate_engine(value):
     if not bool(re.match(pattern, value)):
         raise ValueError('Format for engine should be like 1.9L')
     return value
+
+
+@dataclass
+class CarFiltering:
+    car_ids: Annotated[list[int], Query()] = None
+    # car_ids: list[str] | None = None
+    engine: str | None = None
+    year_start: int | None = None
+    year_end: int | None = None
+    transmission: CarTransmissionEnum | None = None
+    car_number: str | None = None
+    status: CarStatusEnum | None = None
+    rental_cost_start: int | None = None
+    rental_cost_end: int | None = None

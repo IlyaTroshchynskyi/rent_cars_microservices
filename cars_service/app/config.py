@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     RABBITMQ_URL: str
     QUEUE_NAME: str
 
+    GEO_SERVICE_BASE_URL: str
+
     model_config = SettingsConfigDict(case_sensitive=True, frozen=False, env_file='.env')
 
 
