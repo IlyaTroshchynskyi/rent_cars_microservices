@@ -15,7 +15,10 @@ async def test_create_order(client: AsyncClient):
     car = CarReadFactory().build()
     car.rental_cost = 25
 
-    with patch('app.dao.order.get_order_cars') as get_order_cars_mock:
+    with (
+        patch('app.dao.order.get_order_cars') as get_order_cars_mock,
+        patch('app.dao.order.update_cars_status') as update_cars_status_mock,
+    ):
         get_order_cars_mock.return_value = [car]
 
         response = await client.post('/orders/', json=order)
@@ -28,6 +31,25 @@ async def test_create_order(client: AsyncClient):
     assert result == order
     assert rental_time == 3
     assert total_cost == 75
+    get_order_cars_mock.assert_awaited_once()
+    update_cars_status_mock.assert_awaited_once()
+
+
+async def test_create_order_raise_car_not_found(client: AsyncClient):
+    order = OrderCreateFactory().build().serializable_dict()
+
+    with (
+        patch('app.dao.order.get_order_cars') as get_order_cars_mock,
+        patch('app.dao.order.update_cars_status') as update_cars_status_mock,
+    ):
+        update_cars_status_mock.side_effect = CarServiceError(404, 'One ore more cars not found')
+
+        response = await client.post('/orders/', json=order)
+
+    assert response.status_code == 404
+    assert response.json() == {'detail': 'One ore more cars not found'}
+    get_order_cars_mock.assert_awaited_once()
+    update_cars_status_mock.assert_awaited_once()
 
 
 async def test_create_order_not_found_car(client: AsyncClient):

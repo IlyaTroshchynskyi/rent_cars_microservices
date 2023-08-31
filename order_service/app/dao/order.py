@@ -1,10 +1,9 @@
 from beanie import PydanticObjectId
 
-
 from app.custom_exceptions import OrderNotFoundError
-from app.dao.car import get_order_cars
+from app.dao.car import get_order_cars, update_cars_status
 from app.models import Order
-from app.orders.schemas import OrderCreate, OrderUpdate, OrderCarOut
+from app.orders.schemas import OrderCreate, OrderUpdate, OrderCarOut, CarStatusEnum
 
 
 async def get_orders() -> list[Order]:
@@ -12,11 +11,12 @@ async def get_orders() -> list[Order]:
     return order
 
 
-async def create_order(data: OrderCreate) -> Order:
-    rental_time = data.rental_date_end - data.rental_date_start
-    total = await _count_order_total(data.order_cars, rental_time.days)
-    order = Order(**data.model_dump(), rental_time=rental_time.days, total_cost=total)
-    return await order.insert()
+async def create_order(order: OrderCreate) -> Order:
+    rental_time = order.rental_date_end - order.rental_date_start
+    total = await _count_order_total(order.order_cars, rental_time.days)
+    order_db = Order(**order.model_dump(), rental_time=rental_time.days, total_cost=total)
+    await update_cars_status(order.order_cars, CarStatusEnum.ACTIVE)
+    return await order_db.insert()
 
 
 async def delete_order(order: Order):
@@ -35,21 +35,21 @@ async def retrieve_order_and_cars(order_id: PydanticObjectId) -> OrderCarOut:
     return OrderCarOut(**db_order.model_dump(exclude={'order_cars'}), order_cars=cars)
 
 
-async def update_order_by_id(order_id: PydanticObjectId, data: OrderUpdate) -> Order:
-    order = await Order.get(order_id)
-    if not order:
+async def update_order_by_id(order_id: PydanticObjectId, order: OrderUpdate) -> Order:
+    order_db = await Order.get(order_id)
+    if not order_db:
         raise OrderNotFoundError
 
     update_query = {'$set': {
-        field: value for field, value in data.model_dump(exclude_unset=True).items()
+        field: value for field, value in order.model_dump(exclude_unset=True).items()
     }}
 
-    if data.rental_date_end and data.rental_date_end:
-        rental_time = data.rental_date_end - data.rental_date_start
-        total = await _count_order_total(data.order_cars or order.order_cars, rental_time.days)
+    if order.rental_date_end and order.rental_date_end:
+        rental_time = order.rental_date_end - order.rental_date_start
+        total = await _count_order_total(order.order_cars or order_db.order_cars, rental_time.days)
         update_query['$set'].update({'total_cost': total, 'rental_time': rental_time.days})
 
-    await order.update(update_query)
+    await order_db.update(update_query)
 
     # Need extra query because when I update_order list response has not updated list of values
     order = await Order.get(order_id)

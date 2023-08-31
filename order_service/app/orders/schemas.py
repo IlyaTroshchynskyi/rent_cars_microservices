@@ -113,3 +113,8 @@ def _check_date_rental_dates(values):
     if diff.days < 1 or diff.days > 30:
         raise ValueError('Rent period must be between 1 and 30 days')
     return values
+
+
+class CarStatusEnum(StrEnum):
+    ACTIVE = auto()
+    BUSY = auto()
