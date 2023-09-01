@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     MONGODB_URI: str
     MONGODB_DB_NAME: str
 
-    CAR_SERVICE_BASE_URL: str = 'http://127.0.0.1:8000/cars'
+    CAR_SERVICE_BASE_URL: str
 
     model_config = SettingsConfigDict(case_sensitive=True, frozen=True, env_file='.env')
 
