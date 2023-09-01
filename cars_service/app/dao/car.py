@@ -7,7 +7,7 @@ from httpx import AsyncClient
 from sqlalchemy import delete, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.cars.schemas import CarUpdate, CarIn, CarFiltering
+from app.cars.schemas import CarUpdate, CarIn, CarFiltering, CarUpdateStatus
 from app.custom_exceptions import NotFoundError
 from app.config import get_settings
 from app.dao.car_filter import CarQueryBuilder
@@ -63,7 +63,7 @@ async def retrieve_car_by_id(db: AsyncSession, car_id: int) -> Car:
 
 
 async def update_car_by_id(db: AsyncSession, car_id: int, car_data: CarUpdate, file: UploadFile) -> Car:
-    query = update(Car).where(Car.id == car_id).values(**car_data.model_dump(exclude_unset=True)).returning(Car)
+    query = update(Car).where(Car.id == car_id).values(**car_data.model_dump(exclude_none=True)).returning(Car)
     result = await db.execute(query)
     await db.commit()
     car = result.scalar()
@@ -72,6 +72,17 @@ async def update_car_by_id(db: AsyncSession, car_id: int, car_data: CarUpdate, f
             await write_car_image(get_settings().STATIC_DIR + car.car_number.replace(' ', '') + '.jpg', file)
         return car
     raise NotFoundError
+
+
+async def update_cars_status(db: AsyncSession, car: CarUpdateStatus, car_ids: list[int]) -> list[Car]:
+    # need to check if object exists in one transaction
+    for _id in car_ids:
+        await retrieve_car_by_id(db, _id)
+
+    query = update(Car).where(Car.id.in_(car_ids)).values(**car.model_dump()).returning(Car)
+    result = await db.execute(query)
+    await db.commit()
+    return result.scalars()
 
 
 async def is_car_station_exists(car_station_id: int) -> bool:

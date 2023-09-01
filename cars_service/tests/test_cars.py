@@ -1,4 +1,3 @@
-import json
 from unittest.mock import patch
 
 from httpx import AsyncClient
@@ -16,13 +15,11 @@ from app.models import Car
 async def test_create_car(client: AsyncClient, cars_factory: CarReadFactory, db: AsyncSession):
     filename = 'test.jpg'
     car = cars_factory.build()
-    data = {
-        'file': (filename, open(get_settings().TEST_DIR + filename, 'rb'), 'image/jpeg'),
-        'car': (None, json.dumps(car.dict(exclude={'id', 'image'})), 'application/json'),
-    }
+
     with patch('app.cars.router.is_car_station_exists') as is_car_station_exists_mock:
         is_car_station_exists_mock.return_value = True
-        response = await client.post('/cars/', files=data)
+        files = {'file': (filename, open(get_settings().TEST_DIR + filename, 'rb'), 'image/jpeg')}
+        response = await client.post('/cars/',  data=car.dict(exclude={'id', 'image'}), files=files)
 
     assert response.status_code == 201
     assert response.json() == car.dict(exclude={'id', 'image'})
@@ -85,15 +82,14 @@ async def test_retrieve_car_not_found(client: AsyncClient, cars: tuple[CarOut], 
 async def test_update_car(client: AsyncClient, cars: tuple[CarOut], db: AsyncSession):
     filename = 'test.jpg'
     await create_car(db, cars[0])
-    data = {
-        'file': (filename, open(get_settings().TEST_DIR + filename, 'rb'), 'image/jpeg'),
-        'car': (None, json.dumps({'car_description': 'Bmw Updated', 'engine': '4.0L', 'car_station_id': 1}),
-                'application/json'),
-    }
 
     with patch('app.cars.router.is_car_station_exists') as is_car_station_exists_mock:
         is_car_station_exists_mock.return_value = True
-        response = await client.patch(f'/cars/{cars[0].id}', files=data)
+        response = await client.patch(
+            f'/cars/{cars[0].id}',
+            data={'car_description': 'Bmw Updated', 'engine': '4.0L', 'car_station_id': 1},
+            files={'file': (filename, open(get_settings().TEST_DIR + filename, 'rb'), 'image/jpeg')},
+        )
 
     response_data = response.json()
     assert response.status_code == 200
@@ -105,11 +101,8 @@ async def test_update_car(client: AsyncClient, cars: tuple[CarOut], db: AsyncSes
 
 async def test_update_car_not_found(client: AsyncClient, cars: tuple[CarOut], db: AsyncSession):
     await create_car(db, cars[0])
-    data = {
-        'car': (None, json.dumps({'car_description': 'Bmw Updated', 'engine': '4.0L'}), 'application/json'),
-    }
 
-    response = await client.patch(f'/cars/{cars[0].id}1', files=data)
+    response = await client.patch(f'/cars/{cars[0].id}1', data={'car_description': 'Bmw Updated', 'engine': '4.0L'})
 
     assert response.status_code == 404
     assert response.json() == {'detail': 'Car not found'}
@@ -161,3 +154,36 @@ async def test_get_cars_by_mult_params(client: AsyncClient, cars: tuple[CarOut],
 
     assert response.status_code == 200
     assert response.json() == [cars[1].model_dump(), cars[0].model_dump()]
+
+
+async def test_update_car_status(client: AsyncClient, cars: tuple[CarOut], db: AsyncSession):
+    cars[0].status = 'active'
+    cars[1].status = 'active'
+    car1_db = await create_car(db, cars[0])
+    car2_db = await create_car(db, cars[1])
+
+    response = await client.patch(
+        '/cars/car-status/',
+        params={'car_ids': [car1_db.id, car2_db.id]},
+        json={'status': 'busy'},
+    )
+
+    assert response.status_code == 200
+    assert response.json()[0]['status'] == 'busy'
+    assert response.json()[1]['status'] == 'busy'
+
+
+async def test_update_car_status_car_not_found(client: AsyncClient, cars: tuple[CarOut], db: AsyncSession):
+    cars[0].status = 'active'
+    cars[1].status = 'active'
+    car1_db = await create_car(db, cars[0])
+    await create_car(db, cars[1])
+
+    response = await client.patch(
+        '/cars/car-status/',
+        params={'car_ids': [car1_db.id, -2]},
+        json={'status': 'busy'},
+    )
+
+    assert response.status_code == 404
+    assert response.json() == {'detail': 'Car not found'}

@@ -6,7 +6,7 @@ from enum import auto, StrEnum
 import re
 from typing import Annotated
 
-from fastapi import Query
+from fastapi import Query, Form
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
@@ -64,6 +64,24 @@ class CarIn(CarBaseModel):
     rental_cost: int = Field(ge=0, le=5000)
     car_station_id: int
 
+    @classmethod
+    def as_form(
+            cls,
+            car_description: str = Form(),
+            car_number: str = Form(),
+            transmission: CarTransmissionEnum = Form(),
+            engine: str = Form(),
+            year: int = Form(),
+            status: CarStatusEnum = Form(),
+            rental_cost: int = Form(),
+            car_station_id: int = Form()
+
+    ):
+        return cls(
+            car_description=car_description, car_number=car_number, transmission=transmission, engine=engine,
+            year=year, status=status, rental_cost=rental_cost, car_station_id=car_station_id
+        )
+
 
 class CarUpdate(CarBaseModel):
     car_description: str | None = Field(min_length=1, max_length=32, default=None)
@@ -73,6 +91,23 @@ class CarUpdate(CarBaseModel):
     status: CarStatusEnum | None = None
     rental_cost: int | None = Field(ge=0, le=5000, default=None)
     car_station_id: int | None = None
+
+    @classmethod
+    def as_form(
+            cls,
+            car_description: str | None = Form(default=None),
+            transmission: CarTransmissionEnum | None = Form(default=None),
+            engine: str | None = Form(default=None),
+            year: int | None = Form(default=None),
+            status: CarStatusEnum | None = Form(default=None),
+            rental_cost: int | None = Form(default=None),
+            car_station_id: int | None = Form(default=None),
+
+    ):
+        return cls(
+            car_description=car_description, transmission=transmission, engine=engine,
+            year=year, status=status, rental_cost=rental_cost, car_station_id=car_station_id
+        )
 
 
 def _validate_car_number(value):
@@ -92,7 +127,6 @@ def _validate_engine(value):
 @dataclass
 class CarFiltering:
     car_ids: Annotated[list[int], Query()] = None
-    # car_ids: list[str] | None = None
     engine: str | None = None
     year_start: int | None = None
     year_end: int | None = None
@@ -101,3 +135,9 @@ class CarFiltering:
     status: CarStatusEnum | None = None
     rental_cost_start: int | None = None
     rental_cost_end: int | None = None
+
+
+class CarUpdateStatus(BaseModel):
+    status: CarStatusEnum
+
+    model_config = ConfigDict(from_attributes=True)
