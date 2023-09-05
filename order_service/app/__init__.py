@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.orders.router import router as order_router
 from app.db import init_db
@@ -14,4 +15,7 @@ async def lifespan(application: FastAPI):
 def create_app() -> FastAPI:
     app = FastAPI(lifespan=lifespan)
     app.include_router(order_router)
+
+    instrumentator = Instrumentator().instrument(app)
+    instrumentator.expose(app)
     return app

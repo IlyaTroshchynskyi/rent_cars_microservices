@@ -1,6 +1,7 @@
 from beanie import PydanticObjectId
 
 from app.custom_exceptions import OrderNotFoundError
+from app.custom_metrics import total_orders
 from app.dao.car import get_order_cars, update_cars_status
 from app.models import Order
 from app.orders.schemas import OrderCreate, OrderUpdate, OrderCarOut, CarStatusEnum
@@ -16,6 +17,7 @@ async def create_order(order: OrderCreate) -> Order:
     total = await _count_order_total(order.order_cars, rental_time.days)
     order_db = Order(**order.model_dump(), rental_time=rental_time.days, total_cost=total)
     await update_cars_status(order.order_cars, CarStatusEnum.ACTIVE)
+    total_orders.labels('total_orders').inc(total)
     return await order_db.insert()
 
 

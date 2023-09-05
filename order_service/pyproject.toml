@@ -17,6 +17,7 @@ pydantic = "^2.2.0"
 pydantic-settings = "^2.0.3"
 pytest-coverage = "^0.0"
 httpx = "^0.24.1"
+prometheus-fastapi-instrumentator = "^6.1.0"
 
 
 [tool.poetry.group.dev.dependencies]

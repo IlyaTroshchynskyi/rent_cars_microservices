@@ -18,6 +18,7 @@ aiofiles = "^23.2.1"
 psycopg = "^3.1.10"
 sqlalchemy = "^2.0.20"
 aio-pika = "^9.2.2"
+prometheus-fastapi-instrumentator = "^6.1.0"
 
 
 [tool.poetry.group.dev.dependencies]
