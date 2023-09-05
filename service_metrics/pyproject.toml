@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "service-metrics"
+version = "0.1.0"
+description = ""
+authors = ["Illia Troshchynskyi <itroshchinskiy@rambler.ua>"]
+readme = "README.md"
+packages = [{include = "service_metrics"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

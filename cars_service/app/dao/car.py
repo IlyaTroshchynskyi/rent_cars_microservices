@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.cars.schemas import CarUpdate, CarIn, CarFiltering, CarUpdateStatus
 from app.custom_exceptions import NotFoundError
 from app.config import get_settings
+from app.custom_metrics import update_count_car_in_state, execution_time
 from app.dao.car_filter import CarQueryBuilder
 from app.models import Car
 
@@ -20,6 +21,7 @@ async def get_cars(db: AsyncSession, params: CarFiltering) -> Sequence[Car]:
     return result.scalars().all()
 
 
+@execution_time.time()
 async def create_car(db: AsyncSession, car: CarIn, file: UploadFile) -> Car:
     file_name = car.car_number.replace(' ', '') + '.jpg'
     await write_car_image(get_settings().STATIC_DIR + file_name, file)
@@ -62,15 +64,16 @@ async def retrieve_car_by_id(db: AsyncSession, car_id: int) -> Car:
     raise NotFoundError
 
 
-async def update_car_by_id(db: AsyncSession, car_id: int, car_data: CarUpdate, file: UploadFile) -> Car:
-    query = update(Car).where(Car.id == car_id).values(**car_data.model_dump(exclude_none=True)).returning(Car)
+async def update_car_by_id(db: AsyncSession, car_id: int, car: CarUpdate, file: UploadFile) -> Car:
+    query = update(Car).where(Car.id == car_id).values(**car.model_dump(exclude_none=True)).returning(Car)
     result = await db.execute(query)
     await db.commit()
-    car = result.scalar()
-    if car:
+    db_car = result.scalar()
+    update_count_car_in_state(car.status, 1)
+    if db_car:
         if file:
-            await write_car_image(get_settings().STATIC_DIR + car.car_number.replace(' ', '') + '.jpg', file)
-        return car
+            await write_car_image(get_settings().STATIC_DIR + db_car.car_number.replace(' ', '') + '.jpg', file)
+        return db_car
     raise NotFoundError
 
 
@@ -78,6 +81,7 @@ async def update_cars_status(db: AsyncSession, car: CarUpdateStatus, car_ids: li
     # need to check if object exists in one transaction
     for _id in car_ids:
         await retrieve_car_by_id(db, _id)
+    update_count_car_in_state(car.status, len(car_ids))
 
     query = update(Car).where(Car.id.in_(car_ids)).values(**car.model_dump()).returning(Car)
     result = await db.execute(query)

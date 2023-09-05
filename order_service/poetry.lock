@@ -386,6 +386,29 @@ odmantic = ["odmantic", "pydantic[email]"]
 pydantic = ["pydantic[email]"]
 
 [[package]]
+name = "prometheus-client"
+version = "0.17.1"
+description = "Python client for the Prometheus monitoring system."
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.extras]
+twisted = ["twisted"]
+
+[[package]]
+name = "prometheus-fastapi-instrumentator"
+version = "6.1.0"
+description = "Instrument your FastAPI with Prometheus metrics."
+category = "main"
+optional = false
+python-versions = ">=3.7.0,<4.0.0"
+
+[package.dependencies]
+fastapi = ">=0.38.1,<1.0.0"
+prometheus-client = ">=0.8.0,<1.0.0"
+
+[[package]]
 name = "pycodestyle"
 version = "2.11.0"
 description = "Python style guide checker"
@@ -709,7 +732,7 @@ python-versions = ">=3.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.11"
-content-hash = "ed11ecafc4165be925514f03bb1b2f47d53f3e6076ca5c41a9879f07fd447f85"
+content-hash = "d8f2a6afe16fdc6db7e641ad64fee01757c630f90250bb6740f0bbe5c447e5eb"
 
 [metadata.files]
 annotated-types = [
@@ -1023,6 +1046,14 @@ pluggy = [
 polyfactory = [
     {file = "polyfactory-2.7.2-py3-none-any.whl", hash = "sha256:4e61d504527368a90bc51423670ba3528304d20ae0fb9705464ee99a40a711ca"},
     {file = "polyfactory-2.7.2.tar.gz", hash = "sha256:ec919ccca990987134ff8f7b400983feb54285f832b743aa7012be35f998ccd4"},
+]
+prometheus-client = [
+    {file = "prometheus_client-0.17.1-py3-none-any.whl", hash = "sha256:e537f37160f6807b8202a6fc4764cdd19bac5480ddd3e0d463c3002b34462101"},
+    {file = "prometheus_client-0.17.1.tar.gz", hash = "sha256:21e674f39831ae3f8acde238afd9a27a37d0d2fb5a28ea094f0ce25d2cbf2091"},
+]
+prometheus-fastapi-instrumentator = [
+    {file = "prometheus_fastapi_instrumentator-6.1.0-py3-none-any.whl", hash = "sha256:2279ac1cf5b9566a4c3a07f78c9c5ee19648ed90976ab87d73d672abc1bfa017"},
+    {file = "prometheus_fastapi_instrumentator-6.1.0.tar.gz", hash = "sha256:1820d7a90389ce100f7d1285495ead388818ae0882e761c1f3e6e62a410bdf13"},
 ]
 pycodestyle = [
     {file = "pycodestyle-2.11.0-py2.py3-none-any.whl", hash = "sha256:5d1013ba8dc7895b548be5afb05740ca82454fd899971563d2ef625d090326f8"},
