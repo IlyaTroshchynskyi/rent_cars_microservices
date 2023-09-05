@@ -1,10 +1,10 @@
+from io import BytesIO
 from unittest.mock import patch
 
 from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import get_settings
 from tests.conftest import CarReadFactory, create_test_image
 
 from app.cars.schemas import CarOut
@@ -15,10 +15,12 @@ from app.models import Car
 async def test_create_car(client: AsyncClient, cars_factory: CarReadFactory, db: AsyncSession):
     filename = 'test.jpg'
     car = cars_factory.build()
+    file_content = b'This is the content of the file.'
+    file_obj = BytesIO(file_content)
 
     with patch('app.cars.router.is_car_station_exists') as is_car_station_exists_mock:
         is_car_station_exists_mock.return_value = True
-        files = {'file': (filename, open(get_settings().TEST_DIR + filename, 'rb'), 'image/jpeg')}
+        files = {'file': (filename, file_obj, 'image/jpeg')}
         response = await client.post('/cars/',  data=car.dict(exclude={'id', 'image'}), files=files)
 
     assert response.status_code == 201
@@ -85,10 +87,13 @@ async def test_update_car(client: AsyncClient, cars: tuple[CarOut], db: AsyncSes
 
     with patch('app.cars.router.is_car_station_exists') as is_car_station_exists_mock:
         is_car_station_exists_mock.return_value = True
+        file_content = b'This is the content of the file.'
+        file_obj = BytesIO(file_content)
+
         response = await client.patch(
             f'/cars/{cars[0].id}',
             data={'car_description': 'Bmw Updated', 'engine': '4.0L', 'car_station_id': 1},
-            files={'file': (filename, open(get_settings().TEST_DIR + filename, 'rb'), 'image/jpeg')},
+            files={'file': (filename, file_obj, 'image/jpeg')},
         )
 
     response_data = response.json()

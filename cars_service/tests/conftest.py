@@ -1,5 +1,7 @@
 import asyncio
 import os
+from io import BytesIO
+from pathlib import Path
 from typing import Generator
 
 import aiofiles
@@ -26,7 +28,20 @@ def pytest_configure(config: pytest.Config):
     This hook is called for every plugin and initial conftest
     file after command line options have been parsed.
     """
+    base_dir: Path = Path(__file__).resolve().parent.parent
     os.environ['DATABASE_URL'] = 'postgresql+psycopg://test_postgres:test_postgres@localhost:5433/rent-cars-test'
+    os.environ['POSTGRES_HOST'] = 'localhost'
+    os.environ['POSTGRES_PORT'] = '5433'
+    os.environ['POSTGRES_DB'] = 'rent-cars-test'
+    os.environ['POSTGRES_USER'] = 'test_postgres'
+    os.environ['POSTGRES_PASSWORD'] = 'test_postgres'
+    os.environ['RABBITMQ_URL'] = 'amqp://rmuser:rmpassword@127.0.0.1/'
+    os.environ['QUEUE_NAME'] = 'test'
+    os.environ['GEO_SERVICE_BASE_URL'] = 'http://test-car-service-host/cars/'
+    os.environ['STATIC_URL'] = 'http://test-car-service-host/'
+    os.environ['STATIC_DIR']: str = os.path.join(base_dir, 'app/') + 'static/'
+    os.environ['STATIC_URL']: str
+    os.environ['TEST_DIR']: str = os.path.join(base_dir, 'tests/')
 
 
 @pytest.fixture(scope='session')
@@ -147,11 +162,11 @@ async def cars(cars_factory: CarReadFactory) -> tuple[CarOut]:
 
 async def create_test_image(filename):
     settings = get_settings()
-    async with aiofiles.open(settings.TEST_DIR + 'test.jpg', 'rb') as input_file:
-        image_data = await input_file.read()
+    file_content = b'This is the content of the file.'
+    file_obj = BytesIO(file_content)
 
-        async with aiofiles.open(settings.STATIC_DIR + filename + '.jpg', 'wb') as output_file:
-            await output_file.write(image_data)
+    async with aiofiles.open(settings.STATIC_DIR + filename + '.jpg', 'wb') as output_file:
+        await output_file.write(file_obj.read())
 
 
 @register_fixture(name='review_factory')

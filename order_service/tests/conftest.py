@@ -23,6 +23,7 @@ def pytest_configure(config: pytest.Config):
     os.environ['MONGODB_URI'] = 'mongodb://root:example@localhost:27017'
     os.environ['MONGODB_DB_NAME'] = 'OrdersDbTest'
     os.environ['CASE_SENSITIVE'] = '1'
+    os.environ['CAR_SERVICE_BASE_URL'] = 'http://test-car-service-host/cars/'
 
 
 @pytest.fixture(scope='session')
