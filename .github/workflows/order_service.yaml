@@ -1,0 +1,55 @@
+name: Run linter and tests for order service
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: order_service
+        
+    services:
+      mongo:
+        image: mongo
+        env:
+          MONGO_INITDB_ROOT_USERNAME: root
+          MONGO_INITDB_ROOT_PASSWORD: example
+        options: >-
+          --health-cmd "echo 'db.runCommand("ping").ok' | mongosh --quiet"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          --name mongo_containe
+        ports:
+          - 27017:27017
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install poetry
+        run: pipx install poetry
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          architecture: 'x64'
+          cache: 'poetry'
+
+      - name: Install dependencies
+        run: |
+          poetry config virtualenvs.create false
+          poetry install --no-root
+        
+      - name: Linter
+        run: |
+          poetry run python -m flake8
+
+          
+      - name: Test with pytest
+        run: |
+          poetry run pytest ./tests
+
+

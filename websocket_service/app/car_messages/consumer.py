@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 from aio_pika.abc import AbstractIncomingMessage
 
@@ -6,9 +7,12 @@ from app.config import get_settings
 from app.rebbit_connection import get_connection_pool
 
 
+logger = logging.getLogger(__name__)
+
+
 async def on_message(message: AbstractIncomingMessage):
     await asyncio.sleep(1)
-    print(f' [x] Received {message.body}')
+    logger.info(f' [x] Received {message.body}')
     await message.ack()
 
 
