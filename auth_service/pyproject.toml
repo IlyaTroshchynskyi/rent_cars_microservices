@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "auth-service"
+version = "0.1.0"
+description = ""
+authors = ["Illia Troshchynskyi <itroshchinskiy@rambler.ua>"]
+readme = "README.md"
+packages = [{include = "auth_service"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = {extras = ["all"], version = "^0.103.1"}
+boto3 = "^1.28.42"
+passlib = "^1.7.4"
+boto3-stubs = {extras = ["essential"], version = "^1.28.43"}
+
+
+[tool.poetry.group.dev.dependencies]
+flake8 = "^6.1.0"
+flake8-print = "^5.0.0"
+flake8-import-order = "^0.18.2"
+flake8-quotes = "^3.3.2"
+pytest = "^7.4.1"
+pytest-asyncio = "^0.21.1"
+faker = "^19.6.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
