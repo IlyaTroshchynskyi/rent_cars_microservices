@@ -1,12 +1,14 @@
 import uuid
 
+from boto3.dynamodb.conditions import Key
 from mypy_boto3_dynamodb.service_resource import Table
 from passlib.context import CryptContext
 from pydantic import TypeAdapter
 from starlette.concurrency import run_in_threadpool
 
-from app.custom_exceptions import UserNotFoundError
-from app.users.schemas import UserIn, UserOut, UserUpdate, UserUpdateParams
+from app.config import get_settings
+from app.custom_exceptions import UsernameAlreadyTakenError, UserNotFoundError
+from app.users.schemas import UserIn, UserOut, UserUpdate, UserUpdateParams, UserWithPasswd
 
 
 async def get_users(users_table: Table) -> list[UserOut]:
@@ -15,13 +17,18 @@ async def get_users(users_table: Table) -> list[UserOut]:
 
 
 async def create_user(users_table: Table, user: UserIn, pwd_context: CryptContext) -> UserOut:
-    user_id = str(uuid.uuid4())
-    hashed_password = _generate_password_hash(user.password, pwd_context)
-    await run_in_threadpool(
-        users_table.put_item,
-        Item=user.model_dump(exclude={'password'}) | {'id': user_id, 'password': hashed_password},
-    )
-    return await get_user_by_id(users_table, user_id)
+    try:
+        await get_user_by_username(users_table, user.user_name)
+    except UserNotFoundError:
+        user_id = str(uuid.uuid4())
+        hashed_password = _generate_password_hash(user.password, pwd_context)
+        await run_in_threadpool(
+            users_table.put_item,
+            Item=user.model_dump(exclude={'password'}) | {'id': user_id, 'password': hashed_password},
+        )
+        return await get_user_by_id(users_table, user_id)
+
+    raise UsernameAlreadyTakenError
 
 
 async def get_user_by_id(users_table: Table, user_id: str) -> UserOut:
@@ -38,6 +45,13 @@ async def delete_user_by_id(users_table: Table, user_id: str):
 
 
 async def update_user_by_id(users_table: Table, user_id: str, user: UserUpdate) -> UserOut:
+    if user.user_name:
+        try:
+            await get_user_by_username(users_table, user.user_name)
+            raise UsernameAlreadyTakenError
+        except UserNotFoundError:
+            pass
+
     user_update_params = _build_user_update_params(user)
     await get_user_by_id(users_table, user_id)
     await run_in_threadpool(
@@ -48,6 +62,17 @@ async def update_user_by_id(users_table: Table, user_id: str, user: UserUpdate) 
         ExpressionAttributeNames=user_update_params.attribute_names,
     )
     return await get_user_by_id(users_table, user_id)
+
+
+async def get_user_by_username(users_table: Table, username: str) -> UserWithPasswd:
+    user_db = await run_in_threadpool(
+        users_table.query,
+        IndexName=get_settings().USER_NAME_INDEX,
+        KeyConditionExpression=Key('user_name').eq(username),
+    )
+    if user_db['Items']:
+        return UserWithPasswd(**user_db['Items'][0])
+    raise UserNotFoundError
 
 
 def _build_user_update_params(user: UserUpdate) -> UserUpdateParams:

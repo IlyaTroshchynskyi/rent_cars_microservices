@@ -40,6 +40,10 @@ class UserOut(BaseModel):
     order_ids: list[str] | None = []
 
 
+class UserWithPasswd(UserOut):
+    password: str
+
+
 class UserUpdate(UserBaseModel):
     user_name: str | None = Field(min_length=1, max_length=32, default=None)
     first_name: str | None = Field(min_length=1, max_length=32, default=None)

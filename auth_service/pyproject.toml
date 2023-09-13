@@ -12,6 +12,7 @@ fastapi = {extras = ["all"], version = "^0.103.1"}
 boto3 = "^1.28.42"
 passlib = "^1.7.4"
 boto3-stubs = {extras = ["essential"], version = "^1.28.43"}
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
 
 
 [tool.poetry.group.dev.dependencies]

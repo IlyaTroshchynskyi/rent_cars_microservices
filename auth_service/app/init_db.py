@@ -8,12 +8,26 @@ def create_table(ddb: DynamoDBServiceResource, table_name: str):
     settings = get_settings()
     ddb.create_table(
         TableName=table_name,
-        AttributeDefinitions=[{'AttributeName': 'id', 'AttributeType': 'S'}],
+        AttributeDefinitions=[
+            {'AttributeName': 'id', 'AttributeType': 'S'},
+            {'AttributeName': 'user_name', 'AttributeType': 'S'},
+        ],
         KeySchema=[{'AttributeName': 'id', 'KeyType': 'HASH'}],
         ProvisionedThroughput={
             'ReadCapacityUnits': settings.READ_CAPACITY_UNITS,
             'WriteCapacityUnits': settings.WRITE_CAPACITY_UNITS
         },
+        GlobalSecondaryIndexes=[
+            {
+                'IndexName': settings.USER_NAME_INDEX,
+                'KeySchema': [{'AttributeName': 'user_name', 'KeyType': 'HASH'}],
+                'Projection': {'ProjectionType': 'ALL'},
+                'ProvisionedThroughput': {
+                    'ReadCapacityUnits': settings.READ_CAPACITY_UNITS,
+                    'WriteCapacityUnits': settings.WRITE_CAPACITY_UNITS
+                }
+            },
+        ],
     )
 
 

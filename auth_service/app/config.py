@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     USER_TABLE: str
     READ_CAPACITY_UNITS: int
     WRITE_CAPACITY_UNITS: int
+    USER_NAME_INDEX: str
+
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
+    SECRET_KEY: str
 
     model_config = SettingsConfigDict(case_sensitive=True, frozen=False, env_file='.env')
 
