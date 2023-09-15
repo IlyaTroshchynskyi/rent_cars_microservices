@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from fastapi import Response
 
-from app.custom_exceptions import UserNotFoundError
+from app.custom_exceptions import UsernameAlreadyTakenError, UserNotFoundError
 from app.dao.users import create_user, delete_user_by_id, get_user_by_id, get_users, update_user_by_id
 from app.dependency import password_context, user_table
 from app.users.schemas import UserIn, UserOut, UserUpdate
@@ -17,7 +17,10 @@ async def get_all_users(db: user_table):
 
 @router.post('/', response_model=UserOut, status_code=201)
 async def create_new_user(user: UserIn, db: user_table, pwd_context: password_context):
-    return await create_user(db.table, user, pwd_context)
+    try:
+        return await create_user(db.table, user, pwd_context)
+    except UsernameAlreadyTakenError:
+        raise HTTPException(status_code=409, detail='Username had been already taken')
 
 
 @router.get('/{user_id}', response_model=UserOut)
@@ -42,3 +45,5 @@ async def update_user(user_id: str, db: user_table, user: UserUpdate):
         return await update_user_by_id(db.table, user_id, user)
     except UserNotFoundError:
         raise HTTPException(status_code=404, detail='User not found')
+    except UsernameAlreadyTakenError:
+        raise HTTPException(status_code=409, detail='Username had been already taken')

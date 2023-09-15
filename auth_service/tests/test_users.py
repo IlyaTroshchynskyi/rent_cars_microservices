@@ -13,6 +13,14 @@ async def test_create_user(client: AsyncClient, users: tuple[TestUser], clear_ta
     assert result == users[0].model_dump(exclude={'id', 'order_ids', 'password'})
 
 
+async def test_create_user_with_same_username(client: AsyncClient, users: tuple[TestUser], clear_tables):
+    await create_user(users[0])
+    response = await client.post('/users/', json=users[0].model_dump(exclude={'id', 'order_ids'}))
+
+    assert response.status_code == 409
+    assert response.json() == {'detail': 'Username had been already taken'}
+
+
 async def test_create_user_not_valid_passport(client: AsyncClient, users: tuple[TestUser], clear_tables):
     user = users[0].model_dump(exclude={'id', 'order_ids', 'passport'}) | {'passport': '1'}
 
@@ -87,6 +95,18 @@ async def test_update_user_by_id(client: AsyncClient, users: tuple[TestUser], cl
     assert response.status_code == 200
     assert response.json()['first_name'] == 'TestFirstName'
     assert response.json()['last_name'] == 'TetLastName'
+
+
+async def test_update_user_by_id_with_same_user_name(client: AsyncClient, users: tuple[TestUser], clear_tables):
+    user_db = await create_user(users[0])
+
+    response = await client.patch(
+        f'/users/{user_db.id}',
+        json={'first_name': 'TestFirstName', 'user_name': user_db.user_name},
+    )
+
+    assert response.status_code == 409
+    assert response.json() == {'detail': 'Username had been already taken'}
 
 
 async def test_update_user_by_id_not_found(client: AsyncClient, users: tuple[TestUser], clear_tables):

@@ -25,7 +25,7 @@ def pytest_configure(config: pytest.Config):
 def override_get_dynamo_db_table():
     settings = get_settings()
 
-    class SingletonUserTable():
+    class SingletonUserTable:
         def __init__(self):
             self._ddb = boto3.resource('dynamodb', endpoint_url=settings.DYNAMODB_ENDPOINT)
             self.table = self._ddb.Table(settings.USER_TABLE)
@@ -53,9 +53,27 @@ async def create_delete_user_table(db_client):
     await run_in_threadpool(
         db_client.create_table,
         TableName=settings.USER_TABLE,
-        AttributeDefinitions=[{'AttributeName': 'id', 'AttributeType': 'S'}],
+        AttributeDefinitions=[
+            {'AttributeName': 'id', 'AttributeType': 'S'},
+            {'AttributeName': 'user_name', 'AttributeType': 'S'},
+        ],
         KeySchema=[{'AttributeName': 'id', 'KeyType': 'HASH'}],
-        ProvisionedThroughput={'ReadCapacityUnits': 5, 'WriteCapacityUnits': 5})
+        ProvisionedThroughput={
+            'ReadCapacityUnits': settings.READ_CAPACITY_UNITS,
+            'WriteCapacityUnits': settings.WRITE_CAPACITY_UNITS,
+        },
+        GlobalSecondaryIndexes=[
+            {
+                'IndexName': settings.USER_NAME_INDEX,
+                'KeySchema': [{'AttributeName': 'user_name', 'KeyType': 'HASH'}],
+                'Projection': {'ProjectionType': 'ALL'},
+                'ProvisionedThroughput': {
+                    'ReadCapacityUnits': settings.READ_CAPACITY_UNITS,
+                    'WriteCapacityUnits': settings.WRITE_CAPACITY_UNITS
+                }
+            },
+        ],
+    )
     yield
     await run_in_threadpool(db_client.delete_table, TableName=settings.USER_TABLE)
 
@@ -74,7 +92,7 @@ async def clear_tables(db_client):
 
 @pytest.fixture(scope='function')
 async def client(app, db_client) -> AsyncClient:
-    async with AsyncClient(app=app, base_url='http://test') as client:
+    async with AsyncClient(app=app, base_url='http://test/') as client:
         yield client
 
 
