@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     MONGODB_DB_NAME: str
 
     CAR_SERVICE_BASE_URL: str
+    AUTH_SERVICE_BASE_URL: str
 
     model_config = SettingsConfigDict(case_sensitive=True, frozen=True, env_file='.env')
 

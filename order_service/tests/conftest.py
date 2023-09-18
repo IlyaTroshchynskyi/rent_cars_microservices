@@ -11,7 +11,8 @@ import pytest
 
 from app import create_app
 from app.models import gather_documents, Order
-from app.orders.schemas import OrderCreate, OrderDictSerialized, OrderOut, CarOut
+from app.orders.schemas import CarOut, OrderCreate, OrderDictSerialized, OrderOut
+from app.users.schemas import UserOut
 
 
 def pytest_configure(config: pytest.Config):
@@ -24,6 +25,12 @@ def pytest_configure(config: pytest.Config):
     os.environ['MONGODB_DB_NAME'] = 'OrdersDbTest'
     os.environ['CASE_SENSITIVE'] = '1'
     os.environ['CAR_SERVICE_BASE_URL'] = 'http://test-car-service-host/cars/'
+    os.environ['AUTH_SERVICE_BASE_URL'] = 'http://test-car-service-host/auth/'
+
+
+@pytest.fixture
+def non_mocked_hosts() -> list:
+    return ['test']
 
 
 @pytest.fixture(scope='session')
@@ -34,29 +41,26 @@ def event_loop() -> AbstractEventLoop:
     loop.close()
 
 
-async def clear_database(_app: FastAPI) -> None:
-    for model in gather_documents():
-        await model.get_motor_collection().drop()
-        await model.get_motor_collection().drop_indexes()
-
-
 @pytest.fixture(scope='session')
 async def app():
-    app = create_app()
-    async with LifespanManager(app):
-        yield app
+    _app = create_app()
+    async with LifespanManager(_app):
+        yield _app
 
 
 @pytest.fixture()
 async def client(app) -> AsyncClient:
     """Async server client"""
     async with AsyncClient(app=app, base_url='http://test') as _client:
-        try:
-            yield _client
-        except Exception:  # pylint: disable=broad-except
-            pass
-        finally:
-            await clear_database(app)
+        yield _client
+
+
+@pytest.fixture(autouse=True)
+async def clear_db(app: FastAPI) -> None:
+    yield
+    for model in gather_documents():
+        await model.get_motor_collection().drop()
+        await model.get_motor_collection().drop_indexes()
 
 
 @register_fixture(name='orders_factory')
@@ -91,10 +95,25 @@ class OrderCreateFactory(ModelFactory[OrderCreate]):
 @pytest.fixture(scope='function')
 async def orders(orders_factory) -> list[OrderDictSerialized]:
     order_1: OrderOut = orders_factory.build()
-    db_order_1 = Order(**order_1.model_dump())
+    order_1.customer_id = '1'
+    db_order_1 = Order(**order_1.model_dump(exclude={'customer_id'}) | {'customer_id': '1'})
     await db_order_1.insert()
-    yield [order_1.serializable_dict(by_alias=True)]
+
+    order_2: OrderOut = orders_factory.build()
+    order_2.customer_id = '2'
+    db_order_2 = Order(**order_2.model_dump(exclude={'customer_id'}) | {'customer_id': '2'})
+    await db_order_2.insert()
+
+    yield [order_1.serializable_dict(by_alias=True), order_2.serializable_dict(by_alias=True)]
 
 
 class CarReadFactory(ModelFactory[CarOut]):
     __model__ = CarOut
+
+
+class UserOutFactory(ModelFactory[UserOut]):
+    __model__ = UserOut
+
+    @classmethod
+    def transmission(cls) -> str:
+        return cls.__random__.choice(['automatic', 'automatic'])

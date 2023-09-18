@@ -1,9 +1,10 @@
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
 
-from app.orders.router import router as order_router
 from app.db import init_db
+from app.orders.router import router as order_router
 
 
 @asynccontextmanager

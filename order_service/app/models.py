@@ -19,7 +19,7 @@ class Order(Document):
     prepayment: int
     status: OrderStatusEnum
     manager_id: Optional[int] = None
-    owner_id: int
+    customer_id: str
     order_cars: list[int]
 
     class Settings:
