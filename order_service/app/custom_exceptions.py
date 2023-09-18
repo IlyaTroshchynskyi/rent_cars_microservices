@@ -4,3 +4,7 @@ class CarServiceError(Exception):
 
 class OrderNotFoundError(Exception):
     pass
+
+
+class NotOwnerError(Exception):
+    pass

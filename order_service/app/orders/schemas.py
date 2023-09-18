@@ -51,7 +51,7 @@ class OrderOut(BaseOrder):
     prepayment: int
     status: OrderStatusEnum
     manager_id: int | None = None
-    owner_id: int
+    customer_id: str
     order_cars: list[int]
 
 
@@ -64,7 +64,6 @@ class BaseOrderIn(BaseOrder):
     rental_date_end: datetime
     prepayment: int = Field(ge=0, le=10_000)
     status: OrderStatusEnum
-    owner_id: int
 
     @model_validator(mode='after')
     @classmethod
@@ -80,6 +79,7 @@ class OrderCreateReturn(BaseOrderIn):
     rental_time: int
     total_cost: float
     order_cars: list[int]
+    customer_id: str
 
 
 class OrderUpdate(BaseOrder):
